@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    #chat { display: flex; flex-direction: column; height: 100vh; }
+    #messages { flex: 1; overflow-y: auto; padding: 10px; border-bottom: 1px solid #ccc; }
+    #input { display: flex; padding: 10px; }
+    #input input { flex: 1; padding: 10px; }
+    #input button { padding: 10px; }
+    #users { padding: 10px; border-bottom: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <div id="users">Online foydalanuvchilar:</div>
+    <div id="messages"></div>
+    <div id="input">
+      <input type="text" id="messageInput" placeholder="Xabar yozing...">
+      <button id="sendButton">Yuborish</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // Foydalanuvchi login qilish
+    let username = prompt("Ismingizni kiriting:");
+    socket.emit('userLogin', username);
+
+    // Xabarni yuborish
+    const sendButton = document.getElementById('sendButton');
+    const messageInput = document.getElementById('messageInput');
+    const messages = document.getElementById('messages');
+    const users = document.getElementById('users');
+
+    sendButton.addEventListener('click', () => {
+      const message = messageInput.value;
+      if (message.trim() !== '') {
+        socket.emit('sendMessage', { sender: username, message });
+        messageInput.value = '';
+      }
+    });
+
+    // Xabarlarni qabul qilish
+    socket.on('receiveMessage', (data) => {
+      const messageElement = document.createElement('div');
+      messageElement.textContent = `${data.sender}: ${data.message}`;
+      messages.appendChild(messageElement);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    // Foydalanuvchilar ro'yxatini yangilash
+    socket.on('updateUsers', (userList) => {
+      users.innerHTML = 'Online foydalanuvchilar:<br>' + userList.map(user => user.username).join('<br>');
+    });
+  </script>
+</body>
+</html>
